@@ -8,9 +8,8 @@ import org.bukkit.ChatColor;
 import org.bukkit.Bukkit;
 import org.gruposplit.github.offluisera.splitstore.listerner.PlayerListener;
 import org.gruposplit.github.offluisera.splitstore.managers.ConfigManager;
+import org.gruposplit.github.offluisera.splitstore.managers.PurchaseManager;
 
-import java.io.BufferedReader;
-import java.io.InputStreamReader;
 import java.io.OutputStream;
 import java.net.HttpURLConnection;
 import java.net.URL;
@@ -32,39 +31,57 @@ public class SplitStore extends JavaPlugin {
     private String apiUrl;
     private boolean isConnected = false;
     private ConfigManager configManager;
+    private PurchaseManager purchaseManager;
 
     @Override
     public void onEnable() {
-        // Banner de inicialização
-        sendConsoleBanner();
+        try {
+            // Banner de inicialização
+            sendConsoleBanner();
 
-        // Carregar configuração
-        configManager = new ConfigManager(this);
-        configManager.loadConfig();
+            // Carregar configuração
+            getLogger().info("Carregando configurações...");
+            configManager = new ConfigManager(this);
+            configManager.loadConfig();
 
-        // Carregar credenciais
-        apiKey = getConfig().getString("api-key", "");
-        apiSecret = getConfig().getString("api-secret", "");
-        apiUrl = getConfig().getString("api-url", "https://splitstore.com.br/api");
+            // Carregar credenciais
+            apiKey = getConfig().getString("api-key", "");
+            apiSecret = getConfig().getString("api-secret", "");
+            apiUrl = getConfig().getString("api-url", "https://splitstore.com.br/api");
 
-        // Validar credenciais
-        if (apiKey.isEmpty() || apiSecret.isEmpty()) {
-            getLogger().severe("═══════════════════════════════════════════");
-            getLogger().severe("⚠ CREDENCIAIS NÃO CONFIGURADAS!");
-            getLogger().severe("Configure api-key e api-secret no config.yml");
-            getLogger().severe("═══════════════════════════════════════════");
-            return;
+            getLogger().info("API URL: " + apiUrl);
+            getLogger().info("API Key configurada: " + (!apiKey.isEmpty() ? "Sim" : "Não"));
+
+            // Validar credenciais
+            if (apiKey.isEmpty() || apiSecret.isEmpty()) {
+                getLogger().severe("═══════════════════════════════════════════");
+                getLogger().severe("⚠ CREDENCIAIS NÃO CONFIGURADAS!");
+                getLogger().severe("Configure api-key e api-secret no config.yml");
+                getLogger().severe("O comando /splitstore claim não funcionará!");
+                getLogger().severe("═══════════════════════════════════════════");
+                // NÃO retorne aqui - continue carregando
+            } else {
+                // Testar conexão apenas se tiver credenciais
+                testConnection();
+            }
+
+            // Inicializar gerenciadores SEMPRE
+            getLogger().info("Inicializando PurchaseManager...");
+            purchaseManager = new PurchaseManager(this);
+            getLogger().info("PurchaseManager inicializado com sucesso!");
+
+            // Registrar listeners
+            getLogger().info("Registrando listeners...");
+            getServer().getPluginManager().registerEvents(new PlayerListener(this), this);
+
+            getLogger().info("═══════════════════════════════════════════");
+            getLogger().info("✓ SplitStore Plugin carregado com sucesso!");
+            getLogger().info("═══════════════════════════════════════════");
+
+        } catch (Exception e) {
+            getLogger().log(Level.SEVERE, "ERRO CRÍTICO ao inicializar plugin:", e);
+            e.printStackTrace();
         }
-
-        // Testar conexão
-        testConnection();
-
-        // Registrar listeners
-        getServer().getPluginManager().registerEvents(new PlayerListener(this), this);
-
-        getLogger().info("═══════════════════════════════════════════");
-        getLogger().info("✓ SplitStore Plugin carregado com sucesso!");
-        getLogger().info("═══════════════════════════════════════════");
     }
 
     @Override
@@ -100,6 +117,8 @@ public class SplitStore extends JavaPlugin {
                 conn.setRequestProperty("X-API-Key", apiKey);
                 conn.setRequestProperty("X-API-Secret", apiSecret);
                 conn.setDoOutput(true);
+                conn.setConnectTimeout(5000);
+                conn.setReadTimeout(5000);
 
                 String jsonInput = String.format(
                         "{\"server\":\"minecraft\",\"version\":\"%s\"}",
@@ -140,14 +159,23 @@ public class SplitStore extends JavaPlugin {
 
     @Override
     public boolean onCommand(CommandSender sender, Command command, String label, String[] args) {
-        if (command.getName().equalsIgnoreCase("splitstore")) {
+        try {
+            if (!command.getName().equalsIgnoreCase("splitstore")) {
+                return false;
+            }
+
+            getLogger().info("Comando splitstore executado por: " + sender.getName());
+            getLogger().info("Args: " + (args.length > 0 ? args[0] : "nenhum"));
 
             if (args.length == 0) {
                 sendHelpMessage(sender);
                 return true;
             }
 
-            switch (args[0].toLowerCase()) {
+            String subCommand = args[0].toLowerCase();
+            getLogger().info("Subcomando: " + subCommand);
+
+            switch (subCommand) {
                 case "status":
                     sendStatusMessage(sender);
                     break;
@@ -178,14 +206,80 @@ public class SplitStore extends JavaPlugin {
                     sendInfoMessage(sender);
                     break;
 
+                case "claim":
+                    getLogger().info("Processando comando claim...");
+
+                    if (!(sender instanceof Player)) {
+                        sender.sendMessage(ChatColor.RED + "✗ Este comando só pode ser usado por jogadores!");
+                        return true;
+                    }
+
+                    Player player = (Player) sender;
+                    getLogger().info("Jogador: " + player.getName());
+
+                    if (!player.hasPermission("splitstore.claim")) {
+                        player.sendMessage(ChatColor.RED + "✗ Você não tem permissão para usar este comando!");
+                        return true;
+                    }
+
+                    // Verificar se PurchaseManager foi inicializado
+                    if (purchaseManager == null) {
+                        getLogger().severe("ERRO: PurchaseManager está NULL!");
+                        player.sendMessage(ChatColor.RED + "✗ Erro interno: Sistema de compras não inicializado.");
+                        player.sendMessage(ChatColor.RED + "Contate um administrador!");
+                        return true;
+                    }
+
+                    // Verificar credenciais
+                    if (apiKey.isEmpty() || apiSecret.isEmpty()) {
+                        player.sendMessage(ChatColor.RED + "✗ Sistema não configurado.");
+                        player.sendMessage(ChatColor.RED + "Contate um administrador!");
+                        getLogger().warning("Tentativa de claim sem credenciais configuradas!");
+                        return true;
+                    }
+
+                    getLogger().info("Iniciando processamento de compras para: " + player.getName());
+
+                    // Processar resgate
+                    try {
+                        purchaseManager.claimPurchases(player);
+                        getLogger().info("Comando claim processado com sucesso!");
+                    } catch (Exception e) {
+                        getLogger().log(Level.SEVERE, "Erro ao processar claim:", e);
+                        player.sendMessage(ChatColor.RED + "✗ Erro ao processar compras.");
+                        player.sendMessage(ChatColor.RED + "Detalhes foram registrados no log.");
+                        e.printStackTrace();
+                    }
+                    break;
+
+                case "debug":
+                    if (!sender.hasPermission("splitstore.admin")) {
+                        sender.sendMessage(ChatColor.RED + "Você não tem permissão!");
+                        return true;
+                    }
+
+                    sender.sendMessage(ChatColor.YELLOW + "=== DEBUG INFO ===");
+                    sender.sendMessage("PurchaseManager: " + (purchaseManager != null ? "OK" : "NULL"));
+                    sender.sendMessage("API Key: " + (!apiKey.isEmpty() ? "Configurada" : "VAZIA"));
+                    sender.sendMessage("API Secret: " + (!apiSecret.isEmpty() ? "Configurada" : "VAZIA"));
+                    sender.sendMessage("API URL: " + apiUrl);
+                    sender.sendMessage("Conectado: " + (isConnected ? "Sim" : "Não"));
+                    break;
+
                 default:
                     sendHelpMessage(sender);
                     break;
             }
 
             return true;
+
+        } catch (Exception e) {
+            getLogger().log(Level.SEVERE, "ERRO CRÍTICO no comando:", e);
+            e.printStackTrace();
+            sender.sendMessage(ChatColor.RED + "✗ Erro ao executar comando!");
+            sender.sendMessage(ChatColor.RED + "Veja o console para detalhes.");
+            return true;
         }
-        return false;
     }
 
     private void sendHelpMessage(CommandSender sender) {
@@ -194,8 +288,10 @@ public class SplitStore extends JavaPlugin {
         sender.sendMessage(ChatColor.GRAY + "━━━━━━━━━━━━━━━━━━━━━━━━━━━");
         sender.sendMessage(ChatColor.WHITE + "/splitstore status " + ChatColor.GRAY + "- Ver status da conexão");
         sender.sendMessage(ChatColor.WHITE + "/splitstore info " + ChatColor.GRAY + "- Informações do plugin");
+        sender.sendMessage(ChatColor.WHITE + "/splitstore claim " + ChatColor.GRAY + "- Resgatar compras");
         sender.sendMessage(ChatColor.WHITE + "/splitstore reload " + ChatColor.GRAY + "- Recarregar config");
         sender.sendMessage(ChatColor.WHITE + "/splitstore test " + ChatColor.GRAY + "- Testar conexão");
+        sender.sendMessage(ChatColor.WHITE + "/splitstore debug " + ChatColor.GRAY + "- Info debug (admin)");
         sender.sendMessage(ChatColor.GRAY + "━━━━━━━━━━━━━━━━━━━━━━━━━━━");
         sender.sendMessage("");
     }
@@ -208,6 +304,7 @@ public class SplitStore extends JavaPlugin {
         sender.sendMessage(ChatColor.WHITE + "API URL: " + ChatColor.GRAY + apiUrl);
         sender.sendMessage(ChatColor.WHITE + "API Key: " + ChatColor.GRAY + (apiKey.isEmpty() ? "Não configurada" : apiKey.substring(0, Math.min(10, apiKey.length())) + "..."));
         sender.sendMessage(ChatColor.WHITE + "Versão: " + ChatColor.GRAY + "1.0.0");
+        sender.sendMessage(ChatColor.WHITE + "PurchaseManager: " + (purchaseManager != null ? ChatColor.GREEN + "OK" : ChatColor.RED + "NULL"));
         sender.sendMessage(ChatColor.GRAY + "━━━━━━━━━━━━━━━━━━━━━━━━━━━");
         sender.sendMessage("");
     }
@@ -239,5 +336,9 @@ public class SplitStore extends JavaPlugin {
 
     public boolean isConnected() {
         return isConnected;
+    }
+
+    public PurchaseManager getPurchaseManager() {
+        return purchaseManager;
     }
 }
