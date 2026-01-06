@@ -1,0 +1,117 @@
+# ============================================
+# SPLITSTORE - CONFIGURAÇÃO DO PLUGIN
+# ============================================
+# Versão: 1.0.0
+# Compatível: Minecraft 1.8 - 1.20
+# ============================================
+
+# ============================================
+# CREDENCIAIS DA API
+# ============================================
+# Obtenha suas credenciais em:
+# https://splitstore.com.br/client/servers.php
+# ============================================
+
+# Chave de identificação (API Key)
+# Exemplo: ca_1a2b3c4d5e6f7g8h
+api-key: ""
+
+# Chave de autenticação (API Secret)
+# Exemplo: ck_9i8j7k6l5m4n3o2p1q0r
+api-secret: ""
+
+# URL da API (não altere se não souber o que está fazendo)
+api-url: "https://splitstore.com.br/api"
+
+# ============================================
+# CONFIGURAÇÕES GERAIS
+# ============================================
+
+# Modo de debug (mostra logs detalhados)
+debug-mode: false
+
+# Sincronização automática de compras
+auto-sync: true
+
+# Intervalo de sincronização (em segundos)
+# Padrão: 300 (5 minutos)
+sync-interval: 300
+
+# ============================================
+# MENSAGENS PERSONALIZÁVEIS
+# ============================================
+# Use & para cores (ex: &a = verde, &c = vermelho)
+# Códigos disponíveis:
+# &0=preto &1=azul escuro &2=verde escuro &3=ciano escuro
+# &4=vermelho escuro &5=roxo &6=dourado &7=cinza
+# &8=cinza escuro &9=azul &a=verde &b=ciano &c=vermelho
+# &d=rosa &e=amarelo &f=branco
+# &l=negrito &m=riscado &n=sublinhado &o=itálico &r=reset
+# ============================================
+
+messages:
+  # Mensagens de compra
+  purchase-success: "&a✓ Compra aprovada! &7Aproveite seu item."
+  purchase-pending: "&e⏳ Processando compra... &7Aguarde alguns instantes."
+  purchase-failed: "&c✗ Erro ao processar compra. &7Contate o suporte."
+
+  # Mensagens de saldo
+  insufficient-funds: "&c✗ Saldo insuficiente para esta compra."
+
+  # Mensagens de sistema
+  player-not-found: "&c✗ Jogador não encontrado."
+  connection-error: "&c✗ Erro de conexão com SplitStore. &7Tente novamente."
+
+  # Mensagens de resgate
+  claim-success: "&a✓ Você resgatou &f{amount} &aitens com sucesso!"
+  claim-empty: "&e⚠ Você não possui compras pendentes para resgatar."
+  claim-error: "&c✗ Erro ao resgatar compras. &7Contate o suporte."
+
+  # Mensagens de notificação
+  new-purchase: "&a✓ Nova compra recebida! &7Use &f/splitstore claim &7para resgatar."
+
+# ============================================
+# CONFIGURAÇÕES AVANÇADAS
+# ============================================
+
+# Timeout de conexão (em milissegundos)
+connection-timeout: 5000
+
+# Timeout de leitura (em milissegundos)
+read-timeout: 5000
+
+# Máximo de tentativas de reconexão
+max-reconnect-attempts: 3
+
+# Intervalo entre tentativas de reconexão (em segundos)
+reconnect-interval: 30
+
+# ============================================
+# INTEGRAÇÃO COM OUTROS PLUGINS
+# ============================================
+
+# Vault (economia)
+vault:
+  enabled: true
+
+# PlaceholderAPI
+placeholderapi:
+  enabled: true
+
+# ============================================
+# LOGS
+# ============================================
+
+# Salvar logs de transações
+save-transaction-logs: true
+
+# Diretório de logs
+logs-directory: "plugins/SplitStore/logs"
+
+# Manter logs por quantos dias
+logs-retention-days: 30
+
+# ============================================
+# NÃO EDITE ABAIXO DESTA LINHA
+# ============================================
+config-version: 1

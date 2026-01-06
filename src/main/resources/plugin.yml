@@ -1,0 +1,61 @@
+name: SplitStore
+version: '${project.version}'
+main: org.gruposplit.github.offluisera.splitstore.SplitStore
+description: Plugin de integração com SplitStore - Sistema de vendas para servidores Minecraft
+website: https://splitstore.com.br
+
+# Compatibilidade com outros plugins
+softdepend: [Vault, PlaceholderAPI]
+
+# Comandos do plugin
+commands:
+  splitstore:
+    description: Comandos principais do SplitStore
+    usage: |
+      §c§lSPLITSTORE §7- Comandos disponíveis:
+      §f/splitstore status §7- Ver status da conexão
+      §f/splitstore info §7- Informações do plugin
+      §f/splitstore claim §7- Resgatar compras pendentes
+      §f/splitstore reload §7- Recarregar configuração (admin)
+      §f/splitstore test §7- Testar conexão (admin)
+    aliases: [ss, store, loja]
+    permission: splitstore.use
+    permission-message: §c✗ Você não tem permissão para usar este comando!
+
+# Sistema de permissões
+permissions:
+  # Permissão master (todas as permissões)
+  splitstore.*:
+    description: Acesso total ao SplitStore
+    default: op
+    children:
+      splitstore.use: true
+      splitstore.admin: true
+      splitstore.claim: true
+      splitstore.notify: true
+      splitstore.bypass: true
+
+  # Permissão básica de uso
+  splitstore.use:
+    description: Usar comandos básicos do plugin
+    default: true
+
+  # Permissão administrativa
+  splitstore.admin:
+    description: Comandos administrativos (reload, test, etc)
+    default: op
+
+  # Permissão para resgatar compras
+  splitstore.claim:
+    description: Resgatar compras pendentes
+    default: true
+
+  # Permissão para receber notificações
+  splitstore.notify:
+    description: Receber notificações de compras e status
+    default: true
+
+  # Permissão para bypass de limitações
+  splitstore.bypass:
+    description: Ignorar cooldowns e limitações
+    default: op
