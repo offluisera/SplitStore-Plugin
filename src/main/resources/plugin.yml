@@ -18,6 +18,8 @@ commands:
       §f/splitstore claim §7- Resgatar compras pendentes
       §f/splitstore reload §7- Recarregar configuração (admin)
       §f/splitstore test §7- Testar conexão (admin)
+      §f /splitstore genserver <nome> (admin)
+      §f /splitstore verify <código> (admin)
     aliases: [ss, store, loja]
     permission: splitstore.use
     permission-message: §c✗ Você não tem permissão para usar este comando!

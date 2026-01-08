@@ -6,6 +6,7 @@ import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Player;
 import org.bukkit.ChatColor;
 import org.bukkit.Bukkit;
+import org.gruposplit.github.offluisera.splitstore.commands.ServerCommands;
 import org.gruposplit.github.offluisera.splitstore.listerner.PlayerListener;
 import org.gruposplit.github.offluisera.splitstore.managers.ConfigManager;
 import org.gruposplit.github.offluisera.splitstore.managers.PurchaseManager;
@@ -32,6 +33,7 @@ public class SplitStore extends JavaPlugin {
     private boolean isConnected = false;
     private ConfigManager configManager;
     private PurchaseManager purchaseManager;
+    private ServerCommands serverCommands;
 
     @Override
     public void onEnable() {
@@ -59,7 +61,6 @@ public class SplitStore extends JavaPlugin {
                 getLogger().severe("Configure api-key e api-secret no config.yml");
                 getLogger().severe("O comando /splitstore claim não funcionará!");
                 getLogger().severe("═══════════════════════════════════════════");
-                // NÃO retorne aqui - continue carregando
             } else {
                 // Testar conexão apenas se tiver credenciais
                 testConnection();
@@ -69,6 +70,11 @@ public class SplitStore extends JavaPlugin {
             getLogger().info("Inicializando PurchaseManager...");
             purchaseManager = new PurchaseManager(this);
             getLogger().info("PurchaseManager inicializado com sucesso!");
+
+            // Inicializar comandos de servidor
+            getLogger().info("Inicializando ServerCommands...");
+            serverCommands = new ServerCommands(this);
+            getLogger().info("ServerCommands inicializado!");
 
             // Registrar listeners
             getLogger().info("Registrando listeners...");
@@ -206,6 +212,14 @@ public class SplitStore extends JavaPlugin {
                     sendInfoMessage(sender);
                     break;
 
+                case "genserver":
+                    serverCommands.handleGenServer(sender, args);
+                    break;
+
+                case "verify":
+                    serverCommands.handleVerify(sender, args);
+                    break;
+
                 case "claim":
                     getLogger().info("Processando comando claim...");
 
@@ -260,10 +274,12 @@ public class SplitStore extends JavaPlugin {
 
                     sender.sendMessage(ChatColor.YELLOW + "=== DEBUG INFO ===");
                     sender.sendMessage("PurchaseManager: " + (purchaseManager != null ? "OK" : "NULL"));
+                    sender.sendMessage("ServerCommands: " + (serverCommands != null ? "OK" : "NULL"));
                     sender.sendMessage("API Key: " + (!apiKey.isEmpty() ? "Configurada" : "VAZIA"));
                     sender.sendMessage("API Secret: " + (!apiSecret.isEmpty() ? "Configurada" : "VAZIA"));
                     sender.sendMessage("API URL: " + apiUrl);
                     sender.sendMessage("Conectado: " + (isConnected ? "Sim" : "Não"));
+                    sender.sendMessage("Server Verified: " + getConfig().getBoolean("server-verified", false));
                     break;
 
                 default:
@@ -289,6 +305,8 @@ public class SplitStore extends JavaPlugin {
         sender.sendMessage(ChatColor.WHITE + "/splitstore status " + ChatColor.GRAY + "- Ver status da conexão");
         sender.sendMessage(ChatColor.WHITE + "/splitstore info " + ChatColor.GRAY + "- Informações do plugin");
         sender.sendMessage(ChatColor.WHITE + "/splitstore claim " + ChatColor.GRAY + "- Resgatar compras");
+        sender.sendMessage(ChatColor.WHITE + "/splitstore genserver <nome> " + ChatColor.GRAY + "- Gerar Server ID");
+        sender.sendMessage(ChatColor.WHITE + "/splitstore verify <código> " + ChatColor.GRAY + "- Verificar servidor");
         sender.sendMessage(ChatColor.WHITE + "/splitstore reload " + ChatColor.GRAY + "- Recarregar config");
         sender.sendMessage(ChatColor.WHITE + "/splitstore test " + ChatColor.GRAY + "- Testar conexão");
         sender.sendMessage(ChatColor.WHITE + "/splitstore debug " + ChatColor.GRAY + "- Info debug (admin)");
@@ -305,6 +323,7 @@ public class SplitStore extends JavaPlugin {
         sender.sendMessage(ChatColor.WHITE + "API Key: " + ChatColor.GRAY + (apiKey.isEmpty() ? "Não configurada" : apiKey.substring(0, Math.min(10, apiKey.length())) + "..."));
         sender.sendMessage(ChatColor.WHITE + "Versão: " + ChatColor.GRAY + "1.0.0");
         sender.sendMessage(ChatColor.WHITE + "PurchaseManager: " + (purchaseManager != null ? ChatColor.GREEN + "OK" : ChatColor.RED + "NULL"));
+        sender.sendMessage(ChatColor.WHITE + "Servidor Verificado: " + (getConfig().getBoolean("server-verified", false) ? ChatColor.GREEN + "SIM" : ChatColor.YELLOW + "NÃO"));
         sender.sendMessage(ChatColor.GRAY + "━━━━━━━━━━━━━━━━━━━━━━━━━━━");
         sender.sendMessage("");
     }
